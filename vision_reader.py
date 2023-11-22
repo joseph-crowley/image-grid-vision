@@ -1,6 +1,9 @@
-from openai import OpenAI
 import base64
 import json
+
+from openai import OpenAI
+from PIL import Image
+
 from setup_logger import setup_logger
 
 class VisionReader:
@@ -66,7 +69,7 @@ class VisionReader:
                   {
                     "type": "image_url",
                     "image_url": {
-                      "url": f"data:image/jpeg;base64,{base64_image}"
+                      "url": f"data:image/jpeg;base64,{base64_image}", 
                     }
                   }
                 ]
@@ -100,6 +103,11 @@ class VisionReader:
 
             content = response.choices[0].message.content
 
+            cost = response.usage.completion_tokens * 0.03/1000 + response.usage.prompt_tokens * 0.01/1000
+
+            self.logger.info(f"Cost: ${cost} for image {image_path}")
+            self.logger.info(f"Cost per reading: ${cost / (self.grid_shape[0] * self.grid_shape[1])} for image {image_path}")
+
             # try to remove the code block
             for line in content.splitlines():
                 if line.startswith("```"):
@@ -109,7 +117,72 @@ class VisionReader:
             parsed_content = json.loads(content)
             self.logger.info(f"Parsed content from image {image_path}")
             self.logger.debug(f"Content: {parsed_content}")
-            return parsed_content
+            return parsed_content, cost
         except Exception as e:
             self.logger.error(f"Error in parse_image for {image_path}: {e}")
             raise
+
+    def get_image_size(self, image_path):
+        """
+        Get the dimensions of an image.
+
+        :param image_path: Path to the image file.
+        :return: Size of the image (width, height).
+        :raises: Exception if the image cannot be opened or read.
+        """
+        try:
+            with Image.open(image_path) as img:
+                size = img.size
+            self.logger.debug(f"Got image size {size} for {image_path}")
+            return size
+        except Exception as e:
+            self.logger.error(f"Error getting image size for {image_path}: {e}")
+            raise
+
+    def calculate_cost(self, image_path, detail='low'):
+        """
+        Calculate the token cost of an image based on its dimensions and detail level.
+        
+        Based on the pricing for the GPT-4 API: 
+          https://platform.openai.com/docs/guides/vision/calculating-costs
+          https://openai.com/pricing
+          input tokens: 0.01 USD per 1000 tokens
+          output tokens: 0.03 USD per 1000 tokens
+
+        :param width: Width of the image in pixels.
+        :param height: Height of the image in pixels.
+        :param detail: Detail level of the image ('low' or 'high').
+        :return: Total token cost for the image.
+        """
+        if detail == 'low':
+            return 85
+
+
+        width, height = self.get_image_size(image_path)
+
+        # For high detail images
+        # Resize if necessary
+        if width > 2048 or height > 2048:
+            aspect_ratio = width / height
+            if width > height:
+                width = 2048
+                height = int(width / aspect_ratio)
+            else:
+                height = 2048
+                width = int(height * aspect_ratio)
+
+        # Scale to shortest side 768px
+        aspect_ratio = width / height
+        if width < height:
+            width = 768
+            height = int(width / aspect_ratio)
+        else:
+            height = 768
+            width = int(height * aspect_ratio)
+
+        # Calculate number of 512px squares
+        num_squares = (width // 512 + (1 if width % 512 != 0 else 0)) * \
+                      (height // 512 + (1 if height % 512 != 0 else 0))
+
+        # Calculate final cost
+        return 170 * num_squares + 85

@@ -1,19 +1,12 @@
-import logging
 import time
+import json
 
 from image_grid import ImageGrid
 from vision_reader import VisionReader
+from setup_logger import setup_logger
 
-# set up logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
-filename = 'logs/main.log'
-handler = logging.FileHandler(filename)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
-if __name__ == "__main__":
+def main():
+    logger = setup_logger('logs/main.log')
     grid_shape = (20,1)
 
     print("Creating image grids")
@@ -21,9 +14,14 @@ if __name__ == "__main__":
     grid_maker.process_images()
 
     print("Reading image grids with GPT")
+    image_path = "image_grids/output_grid_image_0.png"
     reader = VisionReader(grid_shape=grid_shape, logger=logger)
     t0 = time.perf_counter()
-    reading = reader.parse_image("image_grids/output_grid_image_0.png")
+    reading, cost = reader.parse_image(image_path)
     t1 = time.perf_counter()
 
     print(f"Result (took {t1-t0:.02f} seconds): \n\n{reading}\n\n")
+    print(f"Image Cost: \n    ${cost:.6f} total\n    ${cost / (grid_shape[0] * grid_shape[1]):.6f} per reading\n\n")
+
+if __name__ == '__main__':
+    main()
