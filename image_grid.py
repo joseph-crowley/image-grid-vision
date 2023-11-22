@@ -4,6 +4,14 @@ from setup_logger import setup_logger
 
 class ImageGrid:
     def __init__(self, images_folder, output_folder, grid_shape=None, logger=None):
+        """
+        Initialize the ImageGrid object.
+
+        :param images_folder: Path to the folder containing the images to be processed.
+        :param output_folder: Path to the folder where the output images will be saved.
+        :param grid_shape: Tuple specifying the grid shape (rows, cols). Defaults to (10, 1).
+        :param logger: Logger object for logging messages. If None, a default logger is set up.
+        """
         self.images_folder = images_folder
         self.output_folder = output_folder
         self.grid_shape = grid_shape or (10, 1)
@@ -11,6 +19,13 @@ class ImageGrid:
         self.logger.info(f"Initialized ImageGrid with images folder {images_folder} and output folder {output_folder}")
 
     def get_image_size(self, image_path):
+        """
+        Get the size of the image at the specified path.
+
+        :param image_path: Path to the image file.
+        :return: Size of the image (width, height).
+        :raises: Exception if the image cannot be opened or read.
+        """
         try:
             with Image.open(image_path) as img:
                 size = img.size
@@ -21,6 +36,17 @@ class ImageGrid:
             raise
 
     def combine_images_grid(self, image_paths, output_path, rows, cols, border=0):
+        """
+        Combine multiple images into a grid and save the result.
+
+        :param image_paths: List of paths to the images to be combined.
+        :param output_path: Path where the output image grid will be saved.
+        :param rows: Number of rows in the grid.
+        :param cols: Number of columns in the grid.
+        :param border: Border size in pixels between images.
+        :raises: ValueError if no image paths are provided.
+        :raises: Exception if there's an issue in creating or saving the grid.
+        """
         if not image_paths:
             self.logger.error("No image paths provided to combine_images_grid")
             raise ValueError("No image paths provided")
@@ -48,8 +74,14 @@ class ImageGrid:
             raise
 
     def process_images(self, border=50):
+        """
+        Process all images in the specified folder, combining them into grid images.
+
+        :param border: Border size in pixels between images in the grid.
+        :raises: Exception if there's an error in processing the images.
+        """
         try:
-            all_image_paths = [os.path.join(self.images_folder, img) for img in os.listdir(self.images_folder)]
+            all_image_paths = [os.path.join(self.images_folder, img) for img in os.listdir(self.images_folder) if os.path.isfile(os.path.join(self.images_folder, img))]
             os.makedirs(self.output_folder, exist_ok=True)
             self.logger.info(f"Processing images from {self.images_folder} to {self.output_folder} with border {border}")
 
