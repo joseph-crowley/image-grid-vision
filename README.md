@@ -37,6 +37,7 @@ Image Grid Vision is a Python toolkit designed with the capabilities of OpenAI's
 - After installation, you can import and use the classes `ImageGrid` and `VisionReader` in your Python projects.
 - Use `ImageGrid` to create image grids from a folder of images.
 - Use `VisionReader` to read and interpret the content of images using OpenAI's GPT-4 model.
+- See the example `main.py` file for a demonstration of how to use the toolkit. logs will be saved to the `logs` directory.
 
 ## Contribution
 Contributions are welcome! Feel free to fork the repository and submit pull requests.
